@@ -13,12 +13,7 @@
 |
 */
 
-
-
-$router->get('/', function () use ($router) {
-    return $router->app->version();
-});
-
-$router->get('foo', function (){
-    return 'Floo';
+$router->group(['prefix' => 'api/v1'], function () use($router){
+    $router->post('/post-data', 'MahasiswaController@create');
+    $router->get('/view-data','MahasiswaController@index');
 });
