@@ -19,14 +19,14 @@ class MahasiswaController extends Controller
       // $mahasiswa_all = app('db')->select("SELECT * FROM mhs");
       // $point_all = app('db')->select("SELECT * FROM point");
 
-      $point_all = MahasiswaController::transform_to_array();
+      $point_all = MahasiswaController::calculate();
 
       // $point_all = $point_all->map(function($value){
       //    // return (array) $value;
       //    return $value->toArray();
       // });
       // dd($point_all);
-      // $point = count($point_all);
+      // var_dump($point_all);
       return $point_all;
       
       // return response()->json($point_all);
@@ -177,7 +177,9 @@ class MahasiswaController extends Controller
 
      private function calculate()
      {
-        
+        $data = MahasiswaController::nilai_preferensi();
+
+        return $data;
      }
 
      private function get_point()
@@ -220,19 +222,15 @@ class MahasiswaController extends Controller
          $point_all = MahasiswaController::transform_to_array();
          $tmp = array();
 
-         // for ($i=0; $i < count($point_all); $i++) { 
-         //    $point_ipk = $point_ipk + ($point_all[$i]['point_ipk'] * $point_all[$i]['point_ipk']);
-         //    $point_penghasilan_orangtua = $point_penghasilan_orangtua + ($point_all[$i]['point_penghasilan_orangtua'] * $point_all[$i]['point_penghasilan_orangtua']);
-         //    $point_tagihan_listrik = $point_tagihan_listrik + ($point_all[$i]['point_tagihan_listrik'] * $point_all[$i]['point_tagihan_listrik']);
-         //    $point_prestasi = $point_prestasi + ($point_all[$i]['point_prestasi'] * $point_all[$i]['point_prestasi']);
-         //    $point_bahasa = $point_bahasa + ($point_all[$i]['point_bahasa'] * $point_all[$i]['point_bahasa']);
-         // }
          for ($i=0; $i < count($point_all); $i++) { 
             for ($j=0; $j < count($point_all[$i]); $j++) { 
                if ($j==0) {
-                  $tmp[$i][$j] = $point_all[$i][$j];
                }else {
-                  $tmp[$i][$j] = $tmp[$i][$j] + ($point_all[$i][$j] * $point_all[$i][$j]);
+                  if ($i==0) {
+                     $tmp[$j] = $point_all[$i][$j] * $point_all[$i][$j];
+                  }else {
+                     $tmp[$j] = $tmp[$j] + ($point_all[$i][$j] * $point_all[$i][$j]);
+                  }
                }
             }
          }
@@ -246,12 +244,13 @@ class MahasiswaController extends Controller
         $data = MahasiswaController::normalisasi_1();
         $data_point = $data['point'];
         $data = $data['data'];
-        for ($i=0; $i < count($data_point) ; $i++) { 
-           $data_point[$i]['point_ipk'] = $data_point[$i]['point_ipk']/sqrt($data['point_ipk']);
-           $data_point[$i]['point_penghasilan_orangtua'] = $data_point[$i]['point_penghasilan_orangtua']/sqrt($data['point_penghasilan_orangtua']);
-           $data_point[$i]['point_tagihan_listrik'] = $data_point[$i]['point_tagihan_listrik']/sqrt($data['point_tagihan_listrik']);
-           $data_point[$i]['point_prestasi'] = $data_point[$i]['point_prestasi']/sqrt($data['point_prestasi']);
-           $data_point[$i]['point_bahasa'] = $data_point[$i]['point_bahasa']/sqrt($data['point_bahasa']);
+
+        for ($i=0; $i < count($data_point); $i++) { 
+           for ($j=0; $j <= count($data); $j++) {
+              if ($j != 0) {
+                  $data_point[$i][$j] = $data_point[$i][$j]/sqrt($data[$j]);
+              } 
+           }
         }
 
         return $data_point;
@@ -259,13 +258,14 @@ class MahasiswaController extends Controller
 
      private function normalisasi_bobot()
      {
+        $bobot = [5,4,3,2,1];
         $data = MahasiswaController::normalisasi_2();
         for ($i=0; $i < count($data); $i++) { 
-           $data[$i]['point_ipk']                   = 5 * $data[$i]['point_ipk'];
-           $data[$i]['point_penghasilan_orangtua']  = 4 * $data[$i]['point_penghasilan_orangtua'];
-           $data[$i]['point_tagihan_listrik']       = 3 * $data[$i]['point_tagihan_listrik'];
-           $data[$i]['point_prestasi']              = 2 * $data[$i]['point_prestasi'];
-           $data[$i]['point_bahasa']                = 1 * $data[$i]['point_bahasa'];
+           for ($j=0; $j < count($data[$i]); $j++) {
+              if ($j != 0) {
+                  $data[$i][$j] = $data[$i][$j] * $bobot[$j-1];
+              } 
+           }
         }
 
         return $data;
@@ -273,14 +273,69 @@ class MahasiswaController extends Controller
 
      private function normalisasi_ideal_positif_negatif()
      {
-        $data = MahasiswaController::normalisasi_bobot();
+        $data_normalisasi = MahasiswaController::normalisasi_bobot();
         $data_point = array();
-        for ($i=0; $i < count($data); $i++) { 
-           for ($j=0; $j < 5; $j++) { 
-              if ($i == 0) {
-                 $data_point['positif'][$j] = $data;
+        $data = array();
+        for ($i=0; $i < count($data_normalisasi); $i++) { 
+           for ($j=0; $j < count($data_normalisasi[$i]); $j++) { 
+              if ($j != 0) {
+                 if ($i == 0) {
+                    $data_point['positif'][$j] = $data_normalisasi[$i][$j];
+                    $data_point['negatif'][$j] = $data_normalisasi[$i][$j];
+                 }else {
+                    if ($data_point['positif'][$j] < $data_normalisasi[$i][$j]) {
+                        $data_point['positif'][$j] = $data_normalisasi[$i][$j];
+                    }elseif($data_point['negatif'][$j] > $data_normalisasi[$i][$j]){
+                        $data_point['negatif'][$j] = $data_normalisasi[$i][$j];
+                    }
+                 }
               }
            }
         }
+
+        $data['normalisasi'] = $data_normalisasi;
+        $data['positif_negatif'] = $data_point;
+        
+        return $data;
+     }
+
+     private function jarak_ideal_positif_negatif()
+     {
+        $data = MahasiswaController::normalisasi_ideal_positif_negatif();
+        $tmp_data = array();
+        for ($i=0; $i < count($data['normalisasi']); $i++) {
+            for ($j=0; $j < count($data['normalisasi'][$i]); $j++) { 
+               if($j!=0){
+                  if ($j == 1) {
+                     $tmp_data['positif'][$i] = ($data['normalisasi'][$i][$j]-$data['positif_negatif']['positif'][$j]) * ($data['normalisasi'][$i][$j]-$data['positif_negatif']['positif'][$j]);
+                     $tmp_data['negatif'][$i] = ($data['normalisasi'][$i][$j]-$data['positif_negatif']['negatif'][$j]) * ($data['normalisasi'][$i][$j]-$data['positif_negatif']['negatif'][$j]);
+                  }else {
+                     $tmp_data['positif'][$i] = $tmp_data['positif'][$i] + ($data['normalisasi'][$i][$j]-$data['positif_negatif']['positif'][$j]) * ($data['normalisasi'][$i][$j]-$data['positif_negatif']['positif'][$j]);
+                     $tmp_data['negatif'][$i] = $tmp_data['negatif'][$i] + ($data['normalisasi'][$i][$j]-$data['positif_negatif']['negatif'][$j]) * ($data['normalisasi'][$i][$j]-$data['positif_negatif']['negatif'][$j]);
+                  }
+               }
+            }
+         }
+
+         for ($i=0; $i < count($tmp_data['positif']); $i++) { 
+            $tmp_data['positif'][$i] = sqrt($tmp_data['positif'][$i]);
+            $tmp_data['negatif'][$i] = sqrt($tmp_data['negatif'][$i]);
+         }
+         $data['positif_negatif'] = $tmp_data;
+        return $data;
+     }
+
+     private function nilai_preferensi()
+     {
+        $data = MahasiswaController::jarak_ideal_positif_negatif();
+        $nilai_preferensi = array();
+        
+        for ($i=0; $i < count($data['positif_negatif']['positif']); $i++) { 
+            $nilai_preferensi[$i]['id'] = $data['normalisasi'][$i][0];
+            $nilai_preferensi[$i]['data'] = $data['positif_negatif']['negatif'][$i]/($data['positif_negatif']['positif'][$i]+$data['positif_negatif']['negatif'][$i]);
+        }
+        $data['preferensi'] = $nilai_preferensi;
+
+        return $data;
      }
 }
