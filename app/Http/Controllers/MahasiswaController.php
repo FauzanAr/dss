@@ -54,9 +54,16 @@ class MahasiswaController extends Controller
          if($point->save())
          {
             if($mhs->save()){
-               $res['status'] = true;
-               $res['message'] = "Data Berhasil Di Inputkan";
-               return response($res, 200);
+               $score_save = MahasiswaController::calculate();
+               if($score_save["status"]){
+                  $res['status'] = true;
+                  $res['message'] = "Data Berhasil Di Inputkan";
+                  return response($res, 200);
+               }else {
+                  $res['status'] = false;
+                  $res['message'] = "Score tidak berhasil di input";
+                  return response($res, 500);
+               }
             }
             else {
                $res['status'] = false;
@@ -182,6 +189,9 @@ class MahasiswaController extends Controller
         
         try {
             for ($i=0; $i < count($preferensi); $i++) { 
+               if ($preferensi[$i]['data'] == 1) {
+                     $preferensi[$i]['data'] = 0.999;
+               }
                DB::table('mhs')
                   ->where('id', $preferensi[$i]['id'])
                   ->update(['score'=> $preferensi[$i]['data']]);
