@@ -16,20 +16,10 @@ class MahasiswaController extends Controller
      */
     public function index()
     {
-      // $mahasiswa_all = app('db')->select("SELECT * FROM mhs");
-      // $point_all = app('db')->select("SELECT * FROM point");
-
-      $point_all = MahasiswaController::calculate();
-
-      // $point_all = $point_all->map(function($value){
-      //    // return (array) $value;
-      //    return $value->toArray();
-      // });
-      // dd($point_all);
-      // var_dump($point_all);
-      return $point_all;
-      
-      // return response()->json($point_all);
+      $mhs_all = DB::table('mhs')
+                  ->orderBy('score', 'desc')
+                  ->get();
+      return response()->json($mhs_all);
     }
      public function create(Request $request)
      {
