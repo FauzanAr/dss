@@ -178,8 +178,22 @@ class MahasiswaController extends Controller
      private function calculate()
      {
         $data = MahasiswaController::nilai_preferensi();
-
-        return $data;
+        $preferensi = $data['preferensi'];
+        
+        try {
+            for ($i=0; $i < count($preferensi); $i++) { 
+               DB::table('mhs')
+                  ->where('id', $preferensi[$i]['id'])
+                  ->update(['score'=> $preferensi[$i]['data']]);
+            }
+            $res['status'] = true;
+            $res['message'] = "Success";
+            return $res;
+        } catch (\Illuminate\Database\QueryException $ex) {
+            $res['status'] = false;
+            $res['message'] = $ex->getMessage();
+            return $res;
+        }
      }
 
      private function get_point()
@@ -332,7 +346,7 @@ class MahasiswaController extends Controller
         
         for ($i=0; $i < count($data['positif_negatif']['positif']); $i++) { 
             $nilai_preferensi[$i]['id'] = $data['normalisasi'][$i][0];
-            $nilai_preferensi[$i]['data'] = $data['positif_negatif']['negatif'][$i]/($data['positif_negatif']['positif'][$i]+$data['positif_negatif']['negatif'][$i]);
+            $nilai_preferensi[$i]['data'] = round($data['positif_negatif']['negatif'][$i]/($data['positif_negatif']['positif'][$i]+$data['positif_negatif']['negatif'][$i]),3);
         }
         $data['preferensi'] = $nilai_preferensi;
 
