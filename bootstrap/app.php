@@ -23,7 +23,7 @@ $app = new Laravel\Lumen\Application(
     dirname(__DIR__)
 );
 
-// $app->withFacades();
+$app->withFacades();
 
 $app->withEloquent();
 
@@ -58,8 +58,10 @@ $app->singleton(
 | the default version. You may register other files below as needed.
 |
 */
+// $app->register(Fruitcake\Cors\CorsServiceProvider::class);
 
 $app->configure('app');
+// $app->configure('cors');
 
 /*
 |--------------------------------------------------------------------------
@@ -73,6 +75,10 @@ $app->configure('app');
 */
 
 // $app->middleware([
+//     Fruitcake\Cors\HandleCors::class,
+// ]);
+
+// $app->middleware([
 //     App\Http\Middleware\ExampleMiddleware::class
 // ]);
 
@@ -80,6 +86,9 @@ $app->configure('app');
 //     'auth' => App\Http\Middleware\Authenticate::class,
 // ]);
 
+$app->middleware([
+    App\Http\Middleware\CorsMiddleware::class
+]);
 /*
 |--------------------------------------------------------------------------
 | Register Service Providers
